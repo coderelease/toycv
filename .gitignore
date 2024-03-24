@@ -86,6 +86,8 @@ ENV/
 
 # mkdocs documentation
 /site
+/docs
+/source
 
 # VSCode settings & launch settings
 .vscode/
