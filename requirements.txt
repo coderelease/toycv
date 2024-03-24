@@ -1,0 +1,11 @@
+grad_cam
+imagesize
+matplotlib
+numpy
+opencv_python
+Pillow
+Pillow
+scikit_learn
+setuptools
+torch
+torchvision
