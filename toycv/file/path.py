@@ -4,7 +4,7 @@ import queue
 import re
 
 
-def ensure_dirs(file_path, file_has_suffix=True):
+def ensure_dirs(file_path: str, file_has_suffix: str = True) -> str:
     if file_has_suffix and "." in os.path.basename(file_path):
         directory = os.path.dirname(file_path)
     else:
