@@ -9,7 +9,7 @@ def read(filename):
 setup(
     name='toycv',  # 包名
     python_requires='>=3.8.0',  # python环境
-    version='0.2.0',  # 包的版本
+    version='0.3.0',  # 包的版本
     description="A simple and flexible tool for building and training neural network models.",  # 包简介，显示在PyPI上
 
     long_description=read('README.md'),  # 读取的Readme文档内容，一整块字符串
@@ -53,5 +53,5 @@ pip install -i https://test.pypi.org/simple/ -U toycv
 
 twine upload --repository pypi dist/*
 
-pip install -e .
+pip install .
 """

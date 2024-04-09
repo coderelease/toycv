@@ -22,7 +22,7 @@ def home_path():
     return os.path.expanduser('~')
 
 
-def dir_and_file_ext(file_path):
+def dir_file_ext(file_path):
     return os.path.dirname(file_path), os.path.basename(file_path), os.path.splitext(file_path)[1]
 
 
