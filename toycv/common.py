@@ -28,22 +28,23 @@ def get_current_timestamp():
     return timestamp
 
 
-def equals_re(string_a, string_b, pattern='.*'):
+def equals_re(string_a, string_b, pattern_a='.*', pattern_b='.*'):
     """
     This function is used to compare two strings based on a regular expression pattern.
     The default pattern is '(.*)', which matches any part.
 
     :param string_a: The first string to compare.
     :param string_b: The second string to compare.
-    :param pattern: The regular expression pattern to use for comparison. Default is '(.*)'.
+    :param pattern_a: The regular expression pattern to use for comparison. Default is '(.*)'.
+    :param pattern_b: The regular expression pattern to use for comparison. Default is '(.*)'.
     :return: True if the strings match based on the pattern, False otherwise.
     """
     # print(string_a, string_b)
-    # print(re.findall(pattern, str(string_a)), re.findall(pattern, str(string_b)))
-    return re.findall(pattern, str(string_a)) == re.findall(pattern, str(string_b))
+    # print(re.findall(pattern_a, str(string_a)), re.findall(pattern_b, str(string_b)))
+    return re.findall(pattern_a, str(string_a)) == re.findall(pattern_b, str(string_b))
 
 
-def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_key="all"):
+def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern_a="(.*)", pattern_b="(.*)", keep_key="all"):
     """
     This function is used to join two lists of tuples based on a common key.
     The function supports inner, left, right, and outer joins.
@@ -54,7 +55,8 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
     :param key_a: The index of the key in list_a.
     :param key_b: The index of the key in list_b.
     :param how: The type of join to perform. Default is 'inner'.
-    :param pattern: The regular expression pattern to use for comparison. Default is '(.*)'.
+    :param pattern_a: The regular expression pattern to use for comparison. Default is '(.*)'.
+    :param pattern_b: The regular expression pattern to use for comparison. Default is '(.*)'.
     :param keep_key: The key to keep when joining. Default is 'a'.
     :return: A list of tuples that are the result of the join operation.
     """
@@ -75,7 +77,7 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
     if how == 'inner':
         for a in list_a:
             for b in list_b:
-                if equals_re(a[key_a], b[key_b], pattern):
+                if equals_re(a[key_a], b[key_b], pattern_a, pattern_b):
                     if keep_key == "a":
                         result.append([*a, *b[:key_b], *b[key_b + 1:]])
                     elif keep_key == "b":
@@ -85,7 +87,7 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
     elif how == 'left':
         for a in list_a:
             for b in list_b:
-                if equals_re(a[key_a], b[key_b], pattern):
+                if equals_re(a[key_a], b[key_b], pattern_a, pattern_b):
                     if keep_key == "a":
                         result.append([*a, *b[:key_b], *b[key_b + 1:]])
                     elif keep_key == "b":
@@ -98,7 +100,7 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
     elif how == 'right':
         for b in list_b:
             for a in list_a:
-                if equals_re(a[key_a], b[key_b], pattern):
+                if equals_re(a[key_a], b[key_b], pattern_a, pattern_b):
                     if keep_key == "a":
                         result.append([*a, *b[:key_b], *b[key_b + 1:]])
                     elif keep_key == "b":
@@ -112,7 +114,7 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
     elif how == 'outer':
         for a in list_a:
             for b in list_b:
-                if equals_re(a[key_a], b[key_b], pattern):
+                if equals_re(a[key_a], b[key_b], pattern_a, pattern_b):
                     if keep_key == "a":
                         result.append([*a, *b[:key_b], *b[key_b + 1:]])
                     elif keep_key == "b":
@@ -125,7 +127,7 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern="(.*)", keep_
 
         for b in list_b:
             for a in list_a:
-                if equals_re(a[key_a], b[key_b], pattern):
+                if equals_re(a[key_a], b[key_b], pattern_a, pattern_b):
                     break
             else:  # no break
                 result.append([*(None,) * (len(list_a[0]) - 1), *b])

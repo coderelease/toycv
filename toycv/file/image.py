@@ -44,7 +44,7 @@ def read_image(image_path, grey: bool = False, resize=None, rgb_mode: bool = Tru
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     if resize:
-        image = cv2.resize(image, resize)
+        image = cv2.resize(image, (resize[1], resize[0]))
 
     return image
 
@@ -104,7 +104,7 @@ def read_video(video_path,
 
     :param video_path: 视频文件的路径，字符串格式。
     :param specific_frames: 需要读取的特定帧的序列，每个元素为帧的索引，整数类型。如果该参数为空，则读取视频中的所有帧。
-    :param resize: 重新设定帧的宽和高的尺寸，形式为(w, h)，默认为None，即不改变帧的尺寸。
+    :param resize: 重新设定帧的宽和高的尺寸，形式为(h, w)，默认为None，即不改变帧的尺寸。
     :param rgb_mode: 布尔值，确定是否将帧的颜色空间从BGR转换为RGB，为True时进行转换，默认为True。
 
     :return: 如果读取成功，返回一个numpy数组，形式为 (帧数，高，宽，颜色通道数)，即每一帧图像上包含的像素信息。如果读取失败，返回None。
@@ -130,7 +130,7 @@ def read_video(video_path,
         if rgb_mode:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if resize:
-            frame = cv2.resize(frame, resize)
+            frame = cv2.resize(frame, (resize[1], resize[0]))
         video.append(frame)
 
     cap.release()
@@ -152,7 +152,7 @@ def write_image(image: numpy.ndarray, filename: str, *, resize=None, rgb_mode=Tr
     if rgb_mode:
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     if resize:
-        image = cv2.resize(image, resize)
+        image = cv2.resize(image, (resize[1], resize[0]))
     cv2.imwrite(filename, image)
 
     print(f"{filename} written successfully!")
@@ -196,8 +196,8 @@ def write_video(video: numpy.ndarray, filename: str, *, fps: int = 30, resize=No
 
     if resize:
         # 在resize后更新宽和高
-        width, height = resize
-        video = numpy.array([cv2.resize(frame, resize) for frame in video])
+        height, width = resize
+        video = numpy.array([cv2.resize(frame, (resize[1], resize[0])) for frame in video])
 
     if rgb_mode:
         # 如果在RGB模式下，将所有帧一次性转换以提高效率
