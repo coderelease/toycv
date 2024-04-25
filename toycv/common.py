@@ -1,5 +1,10 @@
+import functools
+import hashlib
+import os
+import pickle
 import re
 import time
+from os import path
 
 import numpy
 
@@ -133,3 +138,31 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern_a="(.*)", pat
                 result.append([*(None,) * (len(list_a[0]) - 1), *b])
 
     return result
+
+
+def file_cache(cache_dir, hash=False):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Create a hash of the function name and arguments to use as the cache filename
+            if hash:
+                cache_key = hashlib.md5(pickle.dumps((func.__name__, args, kwargs))).hexdigest()
+                cache_path = path.join(cache_dir, f"{cache_key}.pkl")
+            else:
+                cache_path = path.join(cache_dir, f"{func.__name__}.pkl")
+
+            # If cache file exists, read from it; otherwise, call the original function and save the result to the cache
+            if path.exists(cache_path):
+                with open(cache_path, 'rb') as f:
+                    result = pickle.load(f)
+            else:
+                result = func(*args, **kwargs)
+                os.makedirs(cache_dir, exist_ok=True)
+                with open(cache_path, 'wb') as f:
+                    pickle.dump(result, f)
+
+            return result
+
+        return wrapper
+
+    return decorator
