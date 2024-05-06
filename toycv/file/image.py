@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Literal, Union
 
 import cv2
 import imagesize
@@ -211,3 +211,127 @@ def write_video(video: numpy.ndarray, filename: str, *, fps: int = 30, resize=No
     writer.release()
 
     print(filename, "written")
+
+
+def keep_ratio_resize_image(image, target_size, position: Union[Literal["center", "random"],] = "center"):
+    """
+    根据target_size，如果图像的比例和target_size不一致，则先按照target_size的比例切割图像，然后再进行缩放
+    :param position:
+    :param image: numpy.array, (h, w[, c])，输入图像。
+    :param target_size: (h, w)，目标尺寸。
+    :return: numpy.array, 缩放后的图像。
+    """
+    h, w = image.shape[:2]
+    th, tw = target_size
+
+    if h / w > th / tw:
+        # 高度过长，需要先按照宽度切割
+        new_h = int(w / tw * th)
+        if position == "center":
+            start = (h - new_h) // 2
+            image = image[start: start + new_h, :]
+        elif position == "random":
+            start = numpy.random.randint(0, h - new_h)
+            image = image[start: start + new_h, :]
+        else:
+            raise ValueError(f"Unknown position {position}.")
+    else:
+        # 宽度过长，需要先按照高度切割
+        new_w = int(h / th * tw)
+        if position == "center":
+            start = (w - new_w) // 2
+            image = image[:, start: start + new_w]
+        elif position == "random":
+            start = numpy.random.randint(0, w - new_w)
+            image = image[:, start: start + new_w]
+        else:
+            raise ValueError(f"Unknown position {position}.")
+
+    image = cv2.resize(image, (tw, th))
+    return image
+
+
+def keep_ratio_resize_video(video, target_size, position: Union[Literal["center", "random"],] = "center"):
+    """
+    根据target_size，如果视频的比例和target_size不一致，则先按照target_size的比例切割视频，然后再进行缩放
+    :param position:
+    :param video: numpy.array, (frames, h, w[, c])，输入视频。
+    :param target_size: (h, w)，目标尺寸。
+    :return: numpy.array, 缩放后的视频。
+    """
+    frames, h, w = video.shape[:3]
+    th, tw = target_size
+
+    if h / w > th / tw:
+        # 高度过长，需要先按照宽度切割
+        new_h = int(w / tw * th)
+        if position == "center":
+            start = (h - new_h) // 2
+            video = video[:, start: start + new_h, :]
+        elif position == "random":
+            start = numpy.random.randint(0, h - new_h)
+            video = video[:, start: start + new_h, :]
+        else:
+            raise ValueError(f"Unknown position {position}.")
+    else:
+        # 宽度过长，需要先按照高度切割
+        new_w = int(h / th * tw)
+        if position == "center":
+            start = (w - new_w) // 2
+            video = video[:, :, start: start + new_w]
+        elif position == "random":
+            start = numpy.random.randint(0, w - new_w)
+            video = video[:, :, start: start + new_w]
+        else:
+            raise ValueError(f"Unknown position {position}.")
+
+    video = numpy.array([cv2.resize(frame, (tw, th)) for frame in video])
+    return video
+
+
+def keep_ratio_resize(image_or_video, target_size, with_channel=True,
+                      position: Union[Literal["center", "random"],] = "center"):
+    """
+    根据target_size，如果图像或视频的比例和target_size不一致，则先按照target_size的比例切割图像或视频，然后再进行缩放
+    :param position: {"center", "random"}，默认为"center"，切割位置。
+    :param image_or_video: numpy.array, (h, w[, c]) or (frames, h, w[, c])，输入图像或视频。
+    :param target_size: (h, w)，目标尺寸。
+    :param with_channel: 是否有通道维度，默认为True。
+    :return: numpy.array, 缩放后的图像或视频。
+    """
+    if image_or_video.ndim == 2:
+        return keep_ratio_resize_image(image_or_video, target_size, position)
+    elif image_or_video.ndim == 3 and with_channel:
+        return keep_ratio_resize_image(image_or_video, target_size, position)
+    elif image_or_video.ndim == 3 and not with_channel:
+        return keep_ratio_resize_image(image_or_video, target_size, position)
+    elif image_or_video.ndim == 4:
+        return keep_ratio_resize_video(image_or_video, target_size, position)
+    else:
+        raise ValueError(f"image_or_video should be 3D or 4D. Got {image_or_video.ndim}D.")
+
+
+def to_grey(image_or_video: numpy.ndarray, with_channel=True):
+    """
+    Convert ndarray image or video to grey.
+    :param image_or_video:  numpy.ndarray, (h, w) or (h, w, c) or (frames, h, w, c).
+    :param with_channel:  whether there is a channel dimension in the input.
+    :return: numpy.ndarray, (h, w) or (h, w, 1) or (frames, h, w, 1).
+    """
+
+    if image_or_video.ndim == 2:
+        # 已经是灰度图像
+        result_image = image_or_video
+    elif image_or_video.ndim == 3 and with_channel:
+        result_image = numpy.mean(image_or_video, axis=-1)
+    elif image_or_video.ndim == 3 and not with_channel:
+        # 已经是灰度图像
+        result_image = image_or_video
+    elif image_or_video.ndim == 4:
+        result_image = numpy.mean(image_or_video, axis=-1)
+    else:
+        raise ValueError(
+            f"image_or_video should be 2D (gray image), 3D (grey video or rgb image) or 4D (rgb video). "
+            f"Got {image_or_video.ndim}D.")
+
+    return result_image[..., numpy.newaxis]

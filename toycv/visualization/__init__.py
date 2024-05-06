@@ -138,7 +138,7 @@ def easy_tsne(data, labels, perplexity=30, n_iter=1000, random_state=0, dot_type
         return numpy.array(image)
 
 
-def show_images(images: List[numpy.array], subtitles=None, col_num: int = 3, title: str = None,
+def show_images(*images: List[numpy.array], subtitles=None, col_num: int = 3, title: str = None,
                 each_size=(8, 7), show: bool = True, save_path: str = None):
     """
     Display or save a collection of images with optional subtitles.

@@ -4,9 +4,12 @@ import os
 import pickle
 import re
 import time
+from collections import defaultdict
 from os import path
+from typing import Literal
 
 import numpy
+import torch
 
 
 def flatten(o):
@@ -49,7 +52,8 @@ def equals_re(string_a, string_b, pattern_a='.*', pattern_b='.*'):
     return re.findall(pattern_a, str(string_a)) == re.findall(pattern_b, str(string_b))
 
 
-def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern_a="(.*)", pattern_b="(.*)", keep_key="all"):
+def join_re(list_a, list_b, key_a=0, key_b=0, how: Literal["inner", "left", "right", "outer"] = 'inner',
+            pattern_a="(.*)", pattern_b="(.*)", keep_key=Literal["all", "a", "b"]):
     """
     This function is used to join two lists of tuples based on a common key.
     The function supports inner, left, right, and outer joins.
@@ -140,6 +144,25 @@ def join_re(list_a, list_b, key_a=0, key_b=0, how='inner', pattern_a="(.*)", pat
     return result
 
 
+def group_re(file_paths, pattern="(.*)", listify=False):
+    # 创建一个defaultdict来按照id进行分组
+    grouped_files = defaultdict(list)
+
+    # 按照id进行分组
+    for file_path in file_paths:
+        match = re.search(pattern, file_path)
+        if match:
+            id = match.group(1)
+            grouped_files[id].append(file_path)
+
+    if listify:
+        grouped_files = list(grouped_files.items())
+    else:
+        grouped_files = dict(grouped_files)
+
+    return grouped_files
+
+
 def file_cache(cache_dir, hash=False):
     def decorator(func):
         @functools.wraps(func)
@@ -149,7 +172,10 @@ def file_cache(cache_dir, hash=False):
                 cache_key = hashlib.md5(pickle.dumps((func.__name__, args, kwargs))).hexdigest()
                 cache_path = path.join(cache_dir, f"{cache_key}.pkl")
             else:
-                cache_path = path.join(cache_dir, f"{func.__name__}.pkl")
+                args_filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '_', f"args={args}, kw={kwargs}")
+                args_filename = re.sub(r'(^\.|(\s+\.|\.\s+)$)', '', args_filename)
+                cache_path = path.join(cache_dir,
+                                       f"{func.__name__}({args_filename}).pkl")
 
             # If cache file exists, read from it; otherwise, call the original function and save the result to the cache
             if path.exists(cache_path):
@@ -166,3 +192,39 @@ def file_cache(cache_dir, hash=False):
         return wrapper
 
     return decorator
+
+
+# def extend_list_get_set(alist, get_method=lambda x: x, set_method=lambda x: x):
+#     class ListWithMethod(list):
+#         def __getitem__(self, item):
+#             return get_method(alist[item])
+#
+#         def __setitem__(self, key, value):
+#             alist[key] = set_method(value)
+#
+#     return ListWithMethod()
+
+
+class extend_list_get_set(list):
+    def __init__(self, alist, get_method=lambda x: x, set_method=lambda x: x):
+        self.get_method = get_method
+        self.set_method = set_method
+        super().__init__(alist)
+
+    def __getitem__(self, item):
+        return self.get_method(super().__getitem__(item))
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, self.set_method(value))
+
+
+def normalize(tensor: torch.Tensor):
+    """
+    Normalize tensor to [0, 1].
+    :param tensor: torch.Tensor.
+    :return: torch.Tensor.
+    """
+    tensor_min = tensor.min()
+    tensor_max = tensor.max()
+
+    return (tensor - tensor_min) / (tensor_max - tensor_min)
