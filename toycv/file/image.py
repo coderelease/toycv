@@ -221,6 +221,7 @@ def keep_ratio_resize_image(image, target_size, position: Union[Literal["center"
     :param target_size: (h, w)，目标尺寸。
     :return: numpy.array, 缩放后的图像。
     """
+    ndim = image.ndim
     h, w = image.shape[:2]
     th, tw = target_size
 
@@ -229,10 +230,10 @@ def keep_ratio_resize_image(image, target_size, position: Union[Literal["center"
         new_h = int(w / tw * th)
         if position == "center":
             start = (h - new_h) // 2
-            image = image[start: start + new_h, :]
+            image = image[start: start + new_h, :, ...]
         elif position == "random":
             start = numpy.random.randint(0, h - new_h)
-            image = image[start: start + new_h, :]
+            image = image[start: start + new_h, :, ...]
         else:
             raise ValueError(f"Unknown position {position}.")
     else:
@@ -240,15 +241,19 @@ def keep_ratio_resize_image(image, target_size, position: Union[Literal["center"
         new_w = int(h / th * tw)
         if position == "center":
             start = (w - new_w) // 2
-            image = image[:, start: start + new_w]
+            image = image[:, start: start + new_w, ...]
         elif position == "random":
             start = numpy.random.randint(0, w - new_w)
-            image = image[:, start: start + new_w]
+            image = image[:, start: start + new_w, ...]
         else:
             raise ValueError(f"Unknown position {position}.")
 
     image = cv2.resize(image, (tw, th))
-    return image
+
+    if ndim == 2:
+        return image
+    elif ndim == 3:
+        return image[..., numpy.newaxis]
 
 
 def keep_ratio_resize_video(video, target_size, position: Union[Literal["center", "random"],] = "center"):
@@ -304,16 +309,21 @@ def keep_ratio_resize(image_or_video, target_size, with_channel=True,
     elif image_or_video.ndim == 3 and with_channel:
         return keep_ratio_resize_image(image_or_video, target_size, position)
     elif image_or_video.ndim == 3 and not with_channel:
-        return keep_ratio_resize_image(image_or_video, target_size, position)
+        return keep_ratio_resize_video(image_or_video, target_size, position)
     elif image_or_video.ndim == 4:
         return keep_ratio_resize_video(image_or_video, target_size, position)
     else:
         raise ValueError(f"image_or_video should be 3D or 4D. Got {image_or_video.ndim}D.")
 
 
-def to_grey(image_or_video: numpy.ndarray, with_channel=True):
+def pil_to_numpy(x):
+    return numpy.array(x)
+
+
+def to_grey(image_or_video: numpy.ndarray, with_channel=True, keep_dim=True):
     """
     Convert ndarray image or video to grey.
+    :param keep_dim: whether to keep the channel dimension.
     :param image_or_video:  numpy.ndarray, (h, w) or (h, w, c) or (frames, h, w, c).
     :param with_channel:  whether there is a channel dimension in the input.
     :return: numpy.ndarray, (h, w) or (h, w, 1) or (frames, h, w, 1).
@@ -333,5 +343,43 @@ def to_grey(image_or_video: numpy.ndarray, with_channel=True):
         raise ValueError(
             f"image_or_video should be 2D (gray image), 3D (grey video or rgb image) or 4D (rgb video). "
             f"Got {image_or_video.ndim}D.")
+    if keep_dim:
+        return result_image[..., numpy.newaxis]
+    else:
+        return result_image
 
-    return result_image[..., numpy.newaxis]
+
+def cv2_binary(image):
+    """
+    cv2二值化，对MNIST效果很好
+    :param image:
+    :return:
+    """
+    # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    # image = cv2.GaussianBlur(image, (5, 5), 0)
+    is_255 = numpy.max(image) > 1
+    is_float = image.dtype == numpy.float32 or image.dtype == numpy.float64
+    if not is_255:
+        image = (image * 255).astype(numpy.uint8)
+    if is_float:
+        image = image.astype(numpy.uint8)
+    # print(image.shape, image.dtype)
+    # 高斯模糊
+    image = cv2.GaussianBlur(image, (3, 3), 0)
+
+    # 直方图均衡化
+    equalized = cv2.equalizeHist(image)
+
+    # 全局 Otsu 二值化
+    _, global_otsu = cv2.threshold(equalized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # 自适应阈值
+    adaptive_thresh = cv2.adaptiveThreshold(equalized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+
+    # 结合 Otsu 和自适应阈值的结果
+    combined = cv2.bitwise_and(global_otsu, adaptive_thresh)
+
+    if not is_255:
+        combined = combined / 255.0
+
+    return combined

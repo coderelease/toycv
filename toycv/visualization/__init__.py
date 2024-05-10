@@ -163,9 +163,10 @@ def show_images(*images: List[numpy.array], subtitles=None, col_num: int = 3, ti
     subtitles = [None] * images_count if subtitles is None else subtitles + [None] * (images_count - len(subtitles))
 
     row_num = (images_count + col_num - 1) // col_num
+    plt.subplots_adjust(top=0.85)  # 调整顶部间距
     fig, axs = plt.subplots(nrows=row_num, ncols=col_num, squeeze=False)
-    if title:
-        fig.suptitle(title)
+    if title is not None:
+        fig.suptitle(title, fontsize=each_size[0] * 4)
 
     fig.set_size_inches(each_size[0] * col_num, each_size[1] * row_num)
 

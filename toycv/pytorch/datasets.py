@@ -11,3 +11,15 @@ class SubDataset(Dataset):
 
     def __getitem__(self, index):
         return self.original_dataset[self.available_index_list[index]]
+
+
+class LimitedDataset(Dataset):
+    def __init__(self, original_dataset, limit):
+        self.original_dataset = original_dataset
+        self.limit = limit
+
+    def __len__(self):
+        return min(len(self.original_dataset), self.limit)
+
+    def __getitem__(self, index):
+        return self.original_dataset[index]

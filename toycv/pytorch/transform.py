@@ -39,6 +39,7 @@ def tensor_to_numpy(image_or_video_tensor: Tensor, with_channel=True):
     :return: numpy.ndarray with shape (h, w, c) or (frames, h, w, c).
     """
     if isinstance(image_or_video_tensor, Tensor):
+        image_or_video_tensor = image_or_video_tensor.cpu()
         if image_or_video_tensor.dim() == 2:
             return image_or_video_tensor.numpy()
         elif image_or_video_tensor.dim() == 3 and with_channel:
