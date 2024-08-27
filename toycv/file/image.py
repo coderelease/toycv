@@ -250,10 +250,10 @@ def keep_ratio_resize_image(image, target_size, position: Union[Literal["center"
 
     image = cv2.resize(image, (tw, th))
 
-    if ndim == 2:
-        return image
-    elif ndim == 3:
+    if ndim == 3 and image.ndim == 2:
         return image[..., numpy.newaxis]
+    else:
+        return image
 
 
 def keep_ratio_resize_video(video, target_size, position: Union[Literal["center", "random"],] = "center"):
@@ -264,6 +264,7 @@ def keep_ratio_resize_video(video, target_size, position: Union[Literal["center"
     :param target_size: (h, w)，目标尺寸。
     :return: numpy.array, 缩放后的视频。
     """
+    ndim = video.ndim
     frames, h, w = video.shape[:3]
     th, tw = target_size
 
@@ -291,7 +292,13 @@ def keep_ratio_resize_video(video, target_size, position: Union[Literal["center"
             raise ValueError(f"Unknown position {position}.")
 
     video = numpy.array([cv2.resize(frame, (tw, th)) for frame in video])
-    return video
+
+    if ndim == 3 and video.ndim == 2:
+        return video[..., numpy.newaxis]
+    elif ndim == 4 and video.ndim == 3:
+        return video[..., numpy.newaxis]
+    else:
+        return video
 
 
 def keep_ratio_resize(image_or_video, target_size, with_channel=True,
@@ -312,6 +319,46 @@ def keep_ratio_resize(image_or_video, target_size, with_channel=True,
         return keep_ratio_resize_video(image_or_video, target_size, position)
     elif image_or_video.ndim == 4:
         return keep_ratio_resize_video(image_or_video, target_size, position)
+    else:
+        raise ValueError(f"image_or_video should be 3D or 4D. Got {image_or_video.ndim}D.")
+
+
+def resize_image(image, target_size):
+    """
+    将图像缩放到指定尺寸。
+    :param image: numpy.array, 输入图像。
+    :param target_size: (h, w)，目标尺寸。
+    :return: numpy.array, 缩放后的图像。
+    """
+    return cv2.resize(image, (target_size[1], target_size[0]))
+
+
+def resize_video(video, target_size):
+    """
+    将视频缩放到指定尺寸。
+    :param video: numpy.array, 输入视频。
+    :param target_size: (h, w)，目标尺寸。
+    :return: numpy.array, 缩放后的视频。
+    """
+    return numpy.array([cv2.resize(frame, (target_size[1], target_size[0])) for frame in video])
+
+
+def resize(image_or_video, target_size, with_channel=True):
+    """
+    将图像或视频缩放到指定尺寸。
+    :param image_or_video: numpy.array, (h, w[, c]) or (frames, h, w[, c])，输入图像或视频。
+    :param target_size: (h, w)，目标尺寸。
+    :param with_channel: 是否有通道维度，默认为True。
+    :return: numpy.array, 缩放后的图像或视频。
+    """
+    if image_or_video.ndim == 2:
+        return resize_image(image_or_video, target_size)
+    elif image_or_video.ndim == 3 and with_channel:
+        return resize_image(image_or_video, target_size)
+    elif image_or_video.ndim == 3 and not with_channel:
+        return resize_video(image_or_video, target_size)
+    elif image_or_video.ndim == 4:
+        return resize_video(image_or_video, target_size)
     else:
         raise ValueError(f"image_or_video should be 3D or 4D. Got {image_or_video.ndim}D.")
 

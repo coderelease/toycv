@@ -38,6 +38,7 @@ def tensor_to_numpy(image_or_video_tensor: Tensor, with_channel=True):
     :param image_or_video_tensor: torch.Tensor with shape (c, h, w) or (frames, c, h, w).
     :return: numpy.ndarray with shape (h, w, c) or (frames, h, w, c).
     """
+    image_or_video_tensor = image_or_video_tensor.detach()
     if isinstance(image_or_video_tensor, Tensor):
         image_or_video_tensor = image_or_video_tensor.cpu()
         if image_or_video_tensor.dim() == 2:

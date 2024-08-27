@@ -4,11 +4,11 @@ matplotlib
 numpy
 opencv_python
 pandas
-Pillow
-Pillow
 pytz
 pytz
 scikit_learn
+seaborn
 setuptools
+thop
 torch
 torchvision
