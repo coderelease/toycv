@@ -18,12 +18,12 @@ def ensure_dirs(file_path: str, file_has_suffix: str = True) -> str:
     return file_path
 
 
-def home_path():
-    return os.path.expanduser('~')
+def home_path(*sub_dirs):
+    return ensure_dirs(os.path.join(os.path.expanduser('~'), *sub_dirs))
 
 
 def dir_file_ext(file_path):
-    return os.path.dirname(file_path), os.path.basename(file_path), os.path.splitext(file_path)[1]
+    return os.path.dirname(file_path), os.path.splitext(os.path.basename(file_path))[0], os.path.splitext(file_path)[1]
 
 
 def glob_re(root_dir, path_re="**"):
